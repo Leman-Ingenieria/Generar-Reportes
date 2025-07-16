@@ -1,77 +1,116 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Generar Reporte Combustible</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Generar Reporte PDF</title>
   <style>
-    body { max-width: 480px; margin: auto; font-family: Arial, sans-serif; padding: 1em; }
-    label, input, button { display: block; width: 100%; margin-top: 1em; font-size: 1em; }
-    #resultado { margin-top: 1em; }
-    a { color: blue; text-decoration: underline; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    form {
+      max-width: 500px;
+      margin: 0 auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 0.7rem;
+      margin-top: 0.5rem;
+      font-size: 1rem;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 2rem;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .mensaje {
+      text-align: center;
+      margin-top: 1rem;
+      color: green;
+    }
+    .error {
+      color: red;
+    }
   </style>
 </head>
 <body>
-  <h2>Generar Reporte de Combustible</h2>
-  <form id="formReporte">
-    <label>Desde:
-      <input type="date" id="desde" required />
-    </label>
-    <label>Hasta:
-      <input type="date" id="hasta" required />
-    </label>
-    <label>Empresa (opcional):
-      <input type="text" id="empresa" placeholder="Empresa" />
-    </label>
-    <label>Patente (opcional):
-      <input type="text" id="patente" placeholder="Patente" />
-    </label>
+  <h1>Generar Reporte de Combustible</h1>
+  <form id="formulario">
+    <label for="desde">Desde (fecha):</label>
+    <input type="date" id="desde" name="desde" required />
+
+    <label for="hasta">Hasta (fecha):</label>
+    <input type="date" id="hasta" name="hasta" required />
+
+    <label for="empresa">Empresa (opcional):</label>
+    <input type="text" id="empresa" name="empresa" />
+
+    <label for="patente">Patente (opcional):</label>
+    <input type="text" id="patente" name="patente" />
+
     <button type="submit">Generar PDF</button>
+    <div class="mensaje" id="mensaje"></div>
   </form>
-  <div id="resultado"></div>
 
   <script>
     const URL_BACKEND = "https://script.google.com/macros/s/AKfycbymI249lT4imrrfrQv_MGSqjNN2i3CeLsPOLMcuU087vJQ-yQZYtkdz0E15CDVE2EQs1A/exec";
 
-    document.getElementById("formReporte").addEventListener("submit", async (e) => {
+    const form = document.getElementById("formulario");
+    const mensaje = document.getElementById("mensaje");
+
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const desde = document.getElementById("desde").value;
-      const hasta = document.getElementById("hasta").value;
-      const empresa = document.getElementById("empresa").value.trim();
-      const patente = document.getElementById("patente").value.trim();
+      mensaje.textContent = "Generando PDF...";
+      mensaje.classList.remove("error");
 
-      if (!desde || !hasta) {
-        alert("Por favor ingrese las fechas desde y hasta.");
-        return;
-      }
-
-      document.getElementById("resultado").textContent = "Generando PDF, por favor espere...";
+      const datos = {
+        desde: form.desde.value,
+        hasta: form.hasta.value,
+        empresa: form.empresa.value,
+        patente: form.patente.value,
+      };
 
       try {
-        const response = await fetch(URL_BACKEND, {
+        const res = await fetch(URL_BACKEND, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ desde, hasta, empresa, patente }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(datos),
         });
 
-        const data = await response.json();
+        const data = await res.json();
 
-        if (data.error) {
-          document.getElementById("resultado").textContent = "Error: " + data.error;
-          return;
+        if (data.url) {
+          mensaje.innerHTML = `✅ <a href="${data.url}" target="_blank">Abrir PDF</a>`;
+        } else {
+          mensaje.textContent = "⚠️ Error: " + (data.error || "No se pudo generar el PDF.");
+          mensaje.classList.add("error");
         }
-
-        document.getElementById("resultado").innerHTML = `
-          <p>PDF generado correctamente:</p>
-          <a href="${data.url}" target="_blank" rel="noopener noreferrer">Ver / Descargar PDF</a>
-        `;
-      } catch (error) {
-        document.getElementById("resultado").textContent = "Error de conexión: " + error.message;
+      } catch (err) {
+        console.error(err);
+        mensaje.textContent = "❌ Error de conexión: " + err.message;
+        mensaje.classList.add("error");
       }
     });
   </script>
 </body>
 </html>
-
