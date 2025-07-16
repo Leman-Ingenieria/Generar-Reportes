@@ -2,130 +2,76 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Generar Reporte PDF</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Generar Reporte Combustible</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: auto;
-      padding: 1em;
-    }
-    h2 {
-      text-align: center;
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-    }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      font-size: 16px;
-    }
-    button {
-      background-color: #007BFF;
-      color: white;
-      border: none;
-      margin-top: 20px;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    .error {
-      color: red;
-      margin-top: 10px;
-      font-weight: bold;
-    }
+    body { max-width: 480px; margin: auto; font-family: Arial, sans-serif; padding: 1em; }
+    label, input, button { display: block; width: 100%; margin-top: 1em; font-size: 1em; }
+    #resultado { margin-top: 1em; }
+    a { color: blue; text-decoration: underline; }
   </style>
 </head>
 <body>
-  <h2>Generar Reporte PDF</h2>
-  <form id="reporteForm">
-    <label for="desde">Desde:</label>
-    <input type="date" name="desde" required />
-
-    <label for="hasta">Hasta:</label>
-    <input type="date" name="hasta" required />
-
-    <label for="empresa">Empresa (opcional):</label>
-    <input type="text" name="empresa" />
-
-    <label for="patente">Patente (opcional):</label>
-    <input type="text" name="patente" />
-
+  <h2>Generar Reporte de Combustible</h2>
+  <form id="formReporte">
+    <label>Desde:
+      <input type="date" id="desde" required />
+    </label>
+    <label>Hasta:
+      <input type="date" id="hasta" required />
+    </label>
+    <label>Empresa (opcional):
+      <input type="text" id="empresa" placeholder="Empresa" />
+    </label>
+    <label>Patente (opcional):
+      <input type="text" id="patente" placeholder="Patente" />
+    </label>
     <button type="submit">Generar PDF</button>
   </form>
-
-  <div id="errorMsg" class="error" style="display:none;"></div>
+  <div id="resultado"></div>
 
   <script>
-    const webAppUrl = "https://script.google.com/macros/s/AKfycbxhDg-5UVahf2H3qvIpEqHhyn0vWKL96-tO5NtzbqeS0Ep_lJ_TlWEgwMHElHeU2orLlg/exec";
+    const URL_BACKEND = "https://script.google.com/macros/s/AKfycbymI249lT4imrrfrQv_MGSqjNN2i3CeLsPOLMcuU087vJQ-yQZYtkdz0E15CDVE2EQs1A/exec";
 
-    function isMobile() {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    }
-
-    document.getElementById("reporteForm").addEventListener("submit", function(e) {
+    document.getElementById("formReporte").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const form = new FormData(e.target);
-      const params = {};
-      form.forEach((value, key) => params[key] = value.trim());
+      const desde = document.getElementById("desde").value;
+      const hasta = document.getElementById("hasta").value;
+      const empresa = document.getElementById("empresa").value.trim();
+      const patente = document.getElementById("patente").value.trim();
 
-      // Validar fechas
-      if (!params.desde || !params.hasta) {
-        showError("Por favor, ingrese ambas fechas: Desde y Hasta.");
-        return;
-      }
-      if (params.desde > params.hasta) {
-        showError("La fecha Desde no puede ser mayor que Hasta.");
+      if (!desde || !hasta) {
+        alert("Por favor ingrese las fechas desde y hasta.");
         return;
       }
 
-      clearError();
+      document.getElementById("resultado").textContent = "Generando PDF, por favor espere...";
 
-      if (isMobile()) {
-        // En móvil, usar window.open con GET para evitar problemas CORS y fetch
-        const query = new URLSearchParams(params).toString();
-        window.open(webAppUrl + "?" + query, "_blank");
-      } else {
-        // En PC, usar fetch POST para mejor control
-        fetch(webAppUrl, {
+      try {
+        const response = await fetch(URL_BACKEND, {
           method: "POST",
-          body: JSON.stringify(params),
           headers: {
-            "Content-Type": "application/json"
-          }
-        })
-        .then(response => {
-          if (!response.ok) throw new Error("Error en la respuesta del servidor");
-          return response.blob();
-        })
-        .then(blob => {
-          const url = URL.createObjectURL(blob);
-          window.open(url, "_blank");
-          URL.revokeObjectURL(url);
-        })
-        .catch(err => {
-          showError("Ocurrió un error al generar el PDF: " + err.message);
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ desde, hasta, empresa, patente }),
         });
+
+        const data = await response.json();
+
+        if (data.error) {
+          document.getElementById("resultado").textContent = "Error: " + data.error;
+          return;
+        }
+
+        document.getElementById("resultado").innerHTML = `
+          <p>PDF generado correctamente:</p>
+          <a href="${data.url}" target="_blank" rel="noopener noreferrer">Ver / Descargar PDF</a>
+        `;
+      } catch (error) {
+        document.getElementById("resultado").textContent = "Error de conexión: " + error.message;
       }
     });
-
-    function showError(msg) {
-      const el = document.getElementById("errorMsg");
-      el.textContent = msg;
-      el.style.display = "block";
-    }
-
-    function clearError() {
-      const el = document.getElementById("errorMsg");
-      el.textContent = "";
-      el.style.display = "none";
-    }
   </script>
 </body>
 </html>
+
