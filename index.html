@@ -1,19 +1,44 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Generar Reporte PDF</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 1em; }
-    h2 { text-align: center; }
-    label { font-weight: bold; margin-top: 1em; display: block; }
-    input, button { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; }
-    button {
-      background-color: #007BFF; color: white; border: none; margin-top: 20px;
-      font-size: 16px; cursor: pointer; border-radius: 5px;
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: auto;
+      padding: 1em;
+      background-color: #f9f9f9;
     }
-    button:hover { background-color: #0056b3; }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    label {
+      font-weight: bold;
+      margin-top: 1em;
+      display: block;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      margin-top: 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
   </style>
 </head>
 <body>
@@ -49,11 +74,16 @@
           }
         });
 
-        if (!response.ok) throw new Error("Error al generar el PDF");
+        if (!response.ok) throw new Error("No se pudo generar el PDF");
 
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
-        window.open(url, "_blank");
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "reporte.pdf";
+        a.click();
+        URL.revokeObjectURL(url);
       } catch (err) {
         alert("Ocurrió un error al generar el PDF: " + err.message);
       }
@@ -61,3 +91,4 @@
   </script>
 </body>
 </html>
+
